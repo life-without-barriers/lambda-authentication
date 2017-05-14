@@ -1,1 +1,1 @@
-exports.authorizer = require('./dist/authorizer-lambda')
+exports.authorizer = require('./dist/authorizer-lambda').default
