@@ -1,6 +1,9 @@
 # lambda-authentication
 
-Openid connect for API Gateway custom authorizers & Serverless
+JWT auth for API Gateway custom authorizers & Serverless
+
+Uses HMACSHA256 with a shared secret. If you are using tokens signed using RSA, v1 might give you some ideas.
+Uses a cookie to roundtrip the JWT, so make sure you consider CSRF protection on your api endpoints.
 
 ## requirements
 
@@ -16,10 +19,10 @@ const authorizer = require('@life-without-barriers/lambda-authentication').autho
 exports.myAuthorizer = authorizer({
   path: '/my-cool-site', // The path to your API
   logger: bunyan.createLogger({ name: 'my-app' }), // Accepts any bunyan logger. optional
-  audience: 'abc123', // The openid connect client id
-  discoveryUrl: 'https://my-openid-server/.well-known/openid-configuration', // the openid connect discovery URL
-  issuer: 'my-openid-org', // the openid connect issuer
-  cookieName: 'foo' // the name of the cookie that contains the JWT
+  audience: 'abc123', // The audience
+  issuer: 'my-openid-org', // the issuer
+  cookieName: 'foo', // the name of the cookie that contains the JWT
+  secret: 'secret key for HMAC signing'
 })
 ```
 

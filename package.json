@@ -1,7 +1,7 @@
 {
   "name": "@life-without-barriers/lambda-authentication",
-  "version": "1.2.4",
-  "description": "OpenID connect utility for integrating custom lamdba authorizers into AWS API Gateway/Serverless",
+  "version": "2.0.0",
+  "description": "Custom lamdba authorizer for AWS API Gateway/Serverless",
   "main": "index.js",
   "license": "MIT",
   "keywords": [
