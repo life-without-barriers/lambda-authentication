@@ -1,5 +1,7 @@
 # lambda-authentication
 
+[![volkswagen status](https://auchenberg.github.io/volkswagen/volkswargen_ci.svg?v=1)](https://github.com/auchenberg/volkswagen)
+
 JWT auth for API Gateway custom authorizers & Serverless
 
 Uses HMACSHA256 with a shared secret. If you are using tokens signed using RSA, v1 might give you some ideas.
