@@ -1,6 +1,7 @@
 import { verify } from 'jsonwebtoken'
 import { parseCookieHeader } from 'strict-cookie-parser'
 import policy from './policy'
+import UnauthorizedError from './unauthorized-error'
 
 export default ({
   authorizationToken,
@@ -12,27 +13,23 @@ export default ({
   cookieName
 }) => {
   if (!authorizationToken) {
-    return { message: 'Unauthorized', error: 'No authorization token present' }
+    throw new UnauthorizedError('No authorization token present')
   }
 
   const cookies = parseCookieHeader(authorizationToken)
   if (!cookies) {
-    return { message: 'Unauthorized', error: 'Invalid Cookie Header' }
+    throw new UnauthorizedError('Invalid Cookie Header')
   }
+
   const token = cookies.get(cookieName)
   if (!token) {
-    return { message: 'Unauthorized', error: `${cookieName} not found in cookies` }
+    throw new UnauthorizedError(`${cookieName} not found in cookies`)
   }
 
-  let decoded
-  try {
-    decoded = verify(token, secret, { algorithm: 'HS256', audience, issuer })
-  } catch (error) {
-    return { message: 'Unauthorized', error }
-  }
-
+  const decoded = verify(token, secret, { algorithm: 'HS256', audience, issuer })
   if (!decoded.sub) {
-    return { message: 'Unauthorized', error: 'sub is a required claim' }
+    throw new UnauthorizedError('sub is a required claim')
   }
+
   return policy(path, methodArn, decoded.sub)
 }

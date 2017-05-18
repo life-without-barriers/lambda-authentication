@@ -27,36 +27,30 @@ describe('authorizer', () => {
   it('should reject no auth token', () => {
     const authorizer = require('./authorizer').default
 
-    const { error, message } = authorizer({
+    expect(() => authorizer({
       methodArn: 'bar'
-    })
-    expect(message).toEqual('Unauthorized')
-    expect(error).toEqual('No authorization token present')
+    })).toThrow(/No\sauthorization\stoken\spresent/)
   })
 
   it('should reject an invalid header', () => {
     const authorizer = require('./authorizer').default
 
-    const { error, message } = authorizer({
+    expect(() => authorizer({
       authorizationToken: 'foo',
       methodArn: 'bar',
       cookieName: 'foo'
-    })
-    expect(message).toEqual('Unauthorized')
-    expect(error).toEqual('Invalid Cookie Header')
+    })).toThrow(/Invalid\sCookie\sHeader/)
   })
 
   it('should reject an invalid jwt', () => {
     const authorizer = require('./authorizer').default
 
-    const { message, error } = authorizer({
+    expect(() => authorizer({
       authorizationToken: 'jwt=foo',
       methodArn: 'bar',
       cookieName: 'jwt',
       secret: 'secret'
-    })
-    expect(message).toEqual('Unauthorized')
-    expect(error.message).toEqual('jwt malformed')
+    })).toThrow(/jwt\smalformed/)
   })
 
   it('should reject an invalid signature', () => {
@@ -64,15 +58,12 @@ describe('authorizer', () => {
 
     const authorizer = require('./authorizer').default
 
-    const { message, error } = authorizer({
+    expect(() => authorizer({
       authorizationToken: `foo=${signed}`,
       methodArn: 'bar',
       cookieName: 'foo',
       secret: 'secret'
-    })
-
-    expect(message).toEqual('Unauthorized')
-    expect(error.message).toEqual('invalid signature')
+    })).toThrow(/invalid\ssignature/)
   })
 
   it('should reject a missing cookie name', () => {
@@ -80,15 +71,12 @@ describe('authorizer', () => {
 
     const authorizer = require('./authorizer').default
 
-    const { message, error } = authorizer({
+    expect(() => authorizer({
       authorizationToken: `foo=${signed}`,
       methodArn: 'bar',
       cookieName: 'nope',
       secret: 'secret'
-    })
-
-    expect(message).toEqual('Unauthorized')
-    expect(error).toEqual('nope not found in cookies')
+    })).toThrow(/nope\snot\sfound\sin\scookies/)
   })
 
   it('should reject expired token', () => {
@@ -103,15 +91,13 @@ describe('authorizer', () => {
     const signed = require('jsonwebtoken').sign(payload, 'secret')
     const authorizer = require('./authorizer').default
 
-    const { message, error } = authorizer({
+    expect(() => authorizer({
       authorizationToken: `foo=${signed}`,
       methodArn: 'bar',
       audience: 'app1',
       cookieName: 'foo',
       secret: 'secret'
-    })
-    expect(message).toEqual('Unauthorized')
-    expect(error.message).toEqual('jwt expired')
+    })).toThrow(/jwt\sexpired/)
   })
 
   it('should reject token with wrong aud', () => {
@@ -120,31 +106,27 @@ describe('authorizer', () => {
     const signed = require('jsonwebtoken').sign(payload, 'secret')
     const authorizer = require('./authorizer').default
 
-    const { message, error } = authorizer({
+    expect(() => authorizer({
       authorizationToken: `foo=${signed}`,
       methodArn: 'bar',
       audience: 'app2',
       cookieName: 'foo',
       secret: 'secret'
-    })
-    expect(error.message).toEqual('jwt audience invalid. expected: app2')
-    expect(message).toEqual('Unauthorized')
+    })).toThrow(/jwt\saudience\sinvalid\.\sexpected:\sapp2/)
   })
 
   it('should reject token with wrong iss', () => {
     const signed = require('jsonwebtoken').sign(getDefaultJwtPayload(), 'secret')
     const authorizer = require('./authorizer').default
 
-    const { message, error } = authorizer({
+    expect(() => authorizer({
       authorizationToken: `foo=${signed}`,
       methodArn: 'bar',
       audience: 'app1',
       cookieName: 'foo',
       issuer: 'nope',
       secret: 'secret'
-    })
-    expect(error.message).toEqual('jwt issuer invalid. expected: nope')
-    expect(message).toEqual('Unauthorized')
+    })).toThrow(/jwt\sissuer\sinvalid\.\sexpected:\snope/)
   })
 
   it('should reject token without sub claim', () => {
@@ -153,21 +135,19 @@ describe('authorizer', () => {
     const signed = require('jsonwebtoken').sign(payload, 'secret')
     const authorizer = require('./authorizer').default
 
-    const { message, error } = authorizer({
+    expect(() => authorizer({
       authorizationToken: `foo=${signed}`,
       methodArn: 'bar',
       cookieName: 'foo',
       secret: 'secret'
-    })
-    expect(error).toEqual('sub is a required claim')
-    expect(message).toEqual('Unauthorized')
+    })).toThrow(/sub\sis\sa\srequired\sclaim/)
   })
 
   it('should validate a valid token', () => {
     const signed = require('jsonwebtoken').sign(getDefaultJwtPayload(), 'secret')
     const authorizer = require('./authorizer').default
 
-    const { policy } = authorizer({
+    const policy = authorizer({
       authorizationToken: `foo=${signed}`,
       methodArn: 'arn:aws:execute-api:us-east-1:123456789012:qsxrty/foo/GET/api/service-agreements/',
       path: '/api/cats',
