@@ -1,64 +1,35 @@
-import j from 'pem-jwk'
-import { verify, decode } from 'jsonwebtoken'
+import { verify } from 'jsonwebtoken'
 import { parseCookieHeader } from 'strict-cookie-parser'
-import getJwks from './jwk'
+import policy from './policy'
+import UnauthorizedError from './unauthorized-error'
 
 export default ({
   authorizationToken,
   methodArn,
   path,
   audience,
-  discoveryUrl,
+  secret,
   issuer,
   cookieName
 }) => {
   if (!authorizationToken) {
-    return Promise.resolve({ message: 'Unauthorized', error: 'No authorization token present' })
+    throw new UnauthorizedError('No authorization token present')
   }
 
   const cookies = parseCookieHeader(authorizationToken)
-
   if (!cookies) {
-    return Promise.resolve({ message: 'Unauthorized', error: 'Invalid Cookie Header' })
+    throw new UnauthorizedError('Invalid Cookie Header')
   }
 
   const token = cookies.get(cookieName)
-
-  const unverified = decode(token, { complete: true })
-  if (!unverified || !unverified.header || !unverified.header.kid) {
-    return Promise.resolve({ message: 'Unauthorized', error: 'Invalid token' })
+  if (!token) {
+    throw new UnauthorizedError(`${cookieName} not found in cookies`)
   }
 
-  return getJwks(discoveryUrl)
-    .then(jwks => {
-      const jwk = jwks.find(i => i.kid === unverified.header.kid)
-      if (!jwk) {
-        return { message: 'Unauthorized', error: 'Invalid kid' }
-      }
+  const decoded = verify(token, secret, { algorithm: 'HS256', audience, issuer })
+  if (!decoded.sub) {
+    throw new UnauthorizedError('sub is a required claim')
+  }
 
-      const pem = j.jwk2pem(jwk)
-      let decoded
-      try {
-        decoded = verify(token, pem, { algorithm: 'RS256', audience, issuer })
-      } catch (error) {
-        return { message: 'Unauthorized', error }
-      }
-
-      // see http://docs.aws.amazon.com/apigateway/latest/developerguide/use-custom-authorizer.html
-      const resourceParts = methodArn.split('/')
-      const resource = `${resourceParts[0]}/${resourceParts[1]}/*${path}`
-      return {
-        policy: {
-          principalId: decoded.email,
-          policyDocument: {
-            Version: '2012-10-17',
-            Statement: [{
-              Action: 'execute-api:Invoke',
-              Effect: 'Allow',
-              Resource: [resource, `${resource}/*`]
-            }]
-          }
-        }
-      }
-    })
+  return policy(path, methodArn, decoded.sub)
 }
