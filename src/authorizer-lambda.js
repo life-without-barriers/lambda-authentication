@@ -1,20 +1,19 @@
 import authorizer from './authorizer'
 
 export default ({ path, logger, audience, secret, issuer, cookieName }) => ({ authorizationToken, methodArn }, context, callback) => {
-  try {
-    const policy = authorizer({
-      authorizationToken,
-      methodArn,
-      path,
-      audience,
-      secret,
-      issuer,
-      cookieName
-    })
+  const { policy, error, message } = authorizer({
+    authorizationToken,
+    methodArn,
+    path,
+    audience,
+    secret,
+    issuer,
+    cookieName
+  })
+  if (policy) {
     logger && logger.info(policy, 'Received policy')
-    callback(null, policy)
-  } catch (error) {
-    logger && logger.error(error)
-    callback(error)
+    return callback(null, policy)
   }
+  logger && logger.error(error, message)
+  callback(message)
 }

@@ -1,5 +1,4 @@
 const { resetModules, mock } = jest
-const UnauthorizedError = require('./unauthorized-error').default
 
 beforeEach(() => {
   resetModules()
@@ -8,7 +7,7 @@ beforeEach(() => {
 describe('lambda authorizer', () => {
   it('should return a policy when provided', done => {
     mock('./authorizer', () => {
-      return () => ({ foo: 'bar' })
+      return () => ({ policy: { foo: 'bar' } })
     })
 
     const lambda = require('./authorizer-lambda').default
@@ -23,29 +22,27 @@ describe('lambda authorizer', () => {
   })
 
   it('should return Unauthorized when auth failed', done => {
-    const error = new UnauthorizedError('Invalid Cookie Header')
     mock('./authorizer', () => {
-      return () => { throw error }
+      return () => ({ message: 'Unauthorized', error: 'Invalid Cookie Header' })
     })
 
     const lambda = require('./authorizer-lambda').default
     lambda({})({}, null, error => {
       expect(error).toBeDefined()
-      expect(error).toEqual(error)
+      expect(error).toEqual('Unauthorized')
       done()
     })
   })
 
   it('should return unknown errors', done => {
-    const error = new Error('cats')
     mock('./authorizer', () => {
-      return () => { throw error }
+      return () => (new Error('cats'))
     })
 
     const lambda = require('./authorizer-lambda').default
     lambda({})({}, null, error => {
       expect(error).toBeDefined()
-      expect(error).toEqual(error)
+      expect(error).toEqual('cats')
       done()
     })
   })
