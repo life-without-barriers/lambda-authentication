@@ -1,6 +1,6 @@
 {
   "name": "@life-without-barriers/lambda-authentication",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Custom lamdba authorizer for AWS API Gateway/Serverless",
   "main": "index.js",
   "license": "MIT",
